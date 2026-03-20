@@ -1,187 +1,292 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, 
-  PieChart, Pie 
+  PieChart, Pie, Cell, 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
 import { 
-  MessageSquare, Instagram, Users, DollarSign, Target, 
-  Pizza, LayoutDashboard, List, ArrowUpRight, Award, TrendingUp
+  MessageSquare, 
+  MousePointer2, 
+  Users, 
+  TrendingUp, 
+  DollarSign, 
+  Pizza,
+  MapPin,
+  Target,
+  ChevronRight,
+  Printer
 } from 'lucide-react';
 
-const App = () => {
-  const [activeTab, setActiveTab] = useState('summary');
+// Datos extraídos de la imagen proporcionada
+const memosPizzaData = [
+  { nombre: "Una palabra para ser feliz, PIZZA", resultados: 700, indicador: "Interacciones", costo: 116.67, gasto: 81670, alcance: 13014, impresiones: 32365 },
+  { nombre: "Envía este reel, la deuda se cobra con las mejores pizzas", resultados: 41, indicador: "Mensajes a WhatsApp", costo: 2727.61, gasto: 111832, alcance: 10069, impresiones: 16597 },
+  { nombre: "Storytime de cuando un cliente devolvió una pizza", resultados: 87, indicador: "Mensajes a WhatsApp", costo: 2413.76, gasto: 209997, alcance: 15214, impresiones: 30602 },
+  { nombre: "Sabemos que es una difícil decisión. Todos tus favoritos", resultados: 1080, indicador: "Interacciones", costo: 138.81, gasto: 149915, alcance: 11177, impresiones: 40881 },
+  { nombre: "Este San Valentín se celebra con pizza", resultados: 26, indicador: "Mensajes a WhatsApp", costo: 3435.88, gasto: 89333, alcance: 9657, impresiones: 15773 },
+  { nombre: "La cena perfecta sí existe", resultados: 488, indicador: "Interacciones", costo: 102.47, gasto: 50005, alcance: 7491, impresiones: 14217 },
+  { nombre: "Una pizza no te quita la tristeza", resultados: 36, indicador: "Mensajes a WhatsApp", costo: 2828.92, gasto: 101841, alcance: 11634, impresiones: 19264 },
+  { nombre: "No tenías hambre... pero el destino tenía otros planes", resultados: 350, indicador: "Visitas al Perfil", costo: 215.89, gasto: 75560, alcance: 13371, impresiones: 19739 },
+];
 
-  // DATOS REALES AUDITADOS - DICIEMBRE 2025
-  const metrics = {
-    totalSpend: 828926,
-    totalImpacts: 97723,
-    whatsappLeads: 121, // 47 conversaciones + 74 clics enlace
-    profileVisits: 865,
-    engagement: 2021
+const COLORS = ['#e11d48', '#f59e0b', '#7c2d12', '#ea580c'];
+
+const StatCard = ({ title, value, subValue, icon: Icon, colorClass }) => (
+  <div className="bg-white p-6 rounded-3xl shadow-sm border border-slate-100 hover:border-rose-200 transition-all group">
+    <div className="flex justify-between items-start mb-4">
+      <div className={`p-3 rounded-2xl ${colorClass}`}>
+        <Icon size={24} className="text-white" />
+      </div>
+      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Global</span>
+    </div>
+    <h3 className="text-slate-500 text-xs font-bold uppercase mb-1">{title}</h3>
+    <div className="flex items-baseline gap-2">
+      <p className="text-2xl font-black text-slate-900">{value}</p>
+    </div>
+    <p className="text-[11px] text-slate-400 mt-2 font-medium">{subValue}</p>
+  </div>
+);
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('overview');
+
+  const stats = useMemo(() => {
+    const totals = memosPizzaData.reduce((acc, curr) => {
+      acc.gasto += curr.gasto;
+      acc.alcance += curr.alcance;
+      acc.impresiones += curr.impresiones;
+      
+      if (curr.indicador === "Mensajes a WhatsApp") acc.mensajes += curr.resultados;
+      if (curr.indicador === "Interacciones") acc.interacciones += curr.resultados;
+      if (curr.indicador === "Visitas al Perfil") acc.visitas += curr.resultados;
+      
+      return acc;
+    }, { gasto: 0, alcance: 0, impresiones: 0, mensajes: 0, interacciones: 0, visitas: 0 });
+
+    return totals;
+  }, []);
+
+  const chartData = useMemo(() => {
+    return [
+      { name: 'WhatsApp', value: stats.mensajes, gasto: memosPizzaData.filter(i => i.indicador.includes('WhatsApp')).reduce((a,b) => a + b.gasto, 0) },
+      { name: 'Interacciones', value: stats.interacciones, gasto: memosPizzaData.filter(i => i.indicador === 'Interacciones').reduce((a,b) => a + b.gasto, 0) },
+      { name: 'Visitas', value: stats.visitas, gasto: memosPizzaData.filter(i => i.indicador.includes('Visitas')).reduce((a,b) => a + b.gasto, 0) },
+    ];
+  }, [stats]);
+
+  const formatCurrency = (val) => new Intl.NumberFormat('es-CO', { style: 'currency', currency: 'COP', maximumFractionDigits: 0 }).format(val);
+  const formatNum = (val) => new Intl.NumberFormat('es-CO').format(val);
+
+  // Función para manejar la exportación a PDF (vía Impresión)
+  const handleExportPDF = () => {
+    window.print();
   };
 
-  const campaigns = [
-    { name: "Nuestro favorito por siempre", goal: "Perfil IG", res: 865, spend: 299989, color: "#FACC15" },
-    { name: "¿Y tu ya probaste...? (Tráfico)", goal: "Link WhatsApp", res: 74, spend: 23953, color: "#22C55E" },
-    { name: "La Navidad sigue sabiendo deliciosa", goal: "Mensaje Directo", res: 23, spend: 152768, color: "#22C55E" },
-    { name: "Advertencia: sabe a Navidad", goal: "Mensaje Directo", res: 17, spend: 40943, color: "#22C55E" },
-    { name: "Navidad en Combo", goal: "Mensaje Directo", res: 7, spend: 26554, color: "#22C55E" },
-  ];
-
-  const MetricCard = ({ title, value, label, icon: Icon, color }) => (
-    <div className="bg-white p-5 rounded-[30px] shadow-sm border border-gray-100 flex flex-col justify-between h-40">
-      <div className="flex justify-between items-start">
-        <div className="p-3 rounded-2xl" style={{ backgroundColor: `${color}15` }}>
-          <Icon size={22} style={{ color: color }} />
-        </div>
-        <span className="text-[10px] font-black text-gray-300 uppercase italic">MEMO'S</span>
-      </div>
-      <div>
-        <p className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-1 leading-tight">{title}</p>
-        <p className="text-2xl font-black text-gray-900 leading-none">{value}</p>
-        <p className="text-[9px] font-medium text-gray-400 mt-1 uppercase italic leading-none">{label}</p>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="min-h-screen bg-[#F9FAFB] pb-32">
-      {/* HEADER */}
-      <header className="bg-[#BC0B0B] pt-14 pb-28 px-6 rounded-b-[50px] shadow-2xl relative overflow-hidden text-white text-center">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-yellow-400 opacity-10 rounded-full blur-3xl -mr-20 -mt-20"></div>
-        <div className="max-w-md mx-auto relative z-10 flex flex-col items-center">
-          <div className="bg-white p-2.5 rounded-2xl shadow-xl mb-4">
-            <Pizza className="text-[#BC0B0B]" size={32} />
+    <div className="min-h-screen bg-[#fafafa] font-sans text-slate-900 pb-12 print:bg-white print:pb-0">
+      {/* Top Navigation / Brand */}
+      <nav className="bg-white border-b border-slate-100 sticky top-0 z-50 print:relative print:border-none">
+        <div className="max-w-7xl mx-auto px-6 py-4 flex flex-col md:flex-row justify-between items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="bg-rose-600 p-2.5 rounded-xl shadow-lg shadow-rose-200 print:shadow-none">
+              <Pizza className="text-white" size={24} />
+            </div>
+            <div>
+              <h1 className="text-xl font-black tracking-tight text-slate-900">Memos Pizza</h1>
+              <div className="flex items-center gap-1 text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                <MapPin size={10} className="text-rose-500" />
+                <span>Cúcuta, Norte de Santander</span>
+              </div>
+            </div>
           </div>
-          <p className="text-red-100 text-[10px] font-black uppercase tracking-[0.3em] mb-1">Diciembre 2025</p>
-          <h1 className="text-4xl font-black italic tracking-tighter uppercase leading-none">Memo's Pizza</h1>
-        </div>
-      </header>
-
-      <main className="max-w-md mx-auto px-4 -mt-16 relative z-20">
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          <MetricCard title="Inversión" value={`$${(metrics.totalSpend / 1000).toFixed(0)}k`} label="Gasto Total" icon={DollarSign} color="#BC0B0B" />
-          <MetricCard title="WhatsApp" value={metrics.whatsappLeads} label="Interés Directo" icon={MessageSquare} color="#16A34A" />
-          <MetricCard title="Perfil IG" value={metrics.profileVisits} label="Impacto Marca" icon={Instagram} color="#EAB308" />
-          <MetricCard title="Alcance" value={`${(metrics.totalImpacts / 1000).toFixed(0)}k`} label="Personas" icon={Users} color="#1F2937" />
-        </div>
-
-        <div className="flex bg-white/80 backdrop-blur-lg p-1.5 rounded-[24px] shadow-sm mb-8 border border-gray-100">
-          {[
-            { id: 'summary', label: 'ANÁLISIS', icon: LayoutDashboard },
-            { id: 'detalle', label: 'CAMPAÑAS', icon: List },
-            { id: 'estrategia', label: 'PLAN', icon: Target }
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`flex-1 flex flex-col items-center py-3 rounded-2xl transition-all ${
-                activeTab === tab.id ? 'bg-[#BC0B0B] text-white shadow-lg' : 'text-gray-400'
-              }`}
+          
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-2xl border border-slate-100 print:hidden">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'overview' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-500'}`}
             >
-              <tab.icon size={18} />
-              <span className="text-[9px] font-black mt-1 uppercase tracking-widest leading-none">{tab.label}</span>
+              Vista General
             </button>
-          ))}
+            <button 
+              onClick={() => setActiveTab('campaigns')}
+              className={`px-4 py-2 rounded-xl text-xs font-bold transition-all ${activeTab === 'campaigns' ? 'bg-white shadow-sm text-rose-600' : 'text-slate-500'}`}
+            >
+              Campañas
+            </button>
+          </div>
+        </div>
+      </nav>
+
+      <main className="max-w-7xl mx-auto px-6 mt-8">
+        {/* KPI Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 print:grid-cols-4">
+          <StatCard 
+            title="Inversión Total" 
+            value={formatCurrency(stats.gasto)}
+            subValue="Presupuesto ejecutado"
+            icon={DollarSign}
+            colorClass="bg-rose-600"
+          />
+          <StatCard 
+            title="Conversiones (WA)" 
+            value={formatNum(stats.mensajes)}
+            subValue={`Costo/Msg: ${formatCurrency(stats.gasto / stats.mensajes)}`}
+            icon={MessageSquare}
+            colorClass="bg-emerald-500"
+          />
+          <StatCard 
+            title="Interacciones" 
+            value={formatNum(stats.interacciones)}
+            subValue="Likes, comments, shares"
+            icon={MousePointer2}
+            colorClass="bg-blue-500"
+          />
+          <StatCard 
+            title="Alcance Total" 
+            value={formatNum(stats.alcance)}
+            subValue={`${formatNum(stats.impresiones)} impresiones`}
+            icon={Users}
+            colorClass="bg-amber-500"
+          />
         </div>
 
-        {activeTab === 'summary' && (
-          <div className="space-y-6 animate-in fade-in duration-500">
-            <div className="bg-white p-8 rounded-[40px] shadow-sm border border-gray-50">
-              <h3 className="text-xs font-black text-gray-800 uppercase italic mb-6 text-center">Interés Real vs Visibilidad</h3>
-              <div className="h-60 w-full">
+        {activeTab === 'overview' ? (
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Main Chart */}
+            <div className="lg:col-span-2 bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 print:shadow-none print:border">
+              <div className="flex justify-between items-center mb-8">
+                <h3 className="font-black text-slate-800 flex items-center gap-2">
+                  <TrendingUp className="text-rose-600" size={20} />
+                  Resultados por Categoría
+                </h3>
+              </div>
+              <div className="h-[350px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={chartData} margin={{ top: 20, right: 30, left: 0, bottom: 0 }}>
+                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                    <XAxis dataKey="name" axisLine={false} tickLine={false} tick={{ fontSize: 12, fontWeight: 700, fill: '#64748b' }} />
+                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                    <Tooltip 
+                      cursor={{ fill: '#fff1f2' }}
+                      contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)' }}
+                    />
+                    <Bar dataKey="value" radius={[10, 10, 0, 0]}>
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+
+            {/* Distribution Chart */}
+            <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100 print:shadow-none print:border">
+              <h3 className="font-black text-slate-800 mb-8 flex items-center gap-2">
+                <Target className="text-rose-600" size={20} />
+                Distribución de Gasto
+              </h3>
+              <div className="h-[250px]">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={[
-                        { name: 'WhatsApp', value: metrics.whatsappLeads },
-                        { name: 'Instagram', value: metrics.profileVisits }
-                      ]}
-                      innerRadius={50} outerRadius={75} paddingAngle={8} dataKey="value"
+                      data={chartData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={80}
+                      paddingAngle={8}
+                      dataKey="gasto"
                     >
-                      <Cell fill="#16A34A" />
-                      <Cell fill="#FACC15" />
+                      {chartData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
                     </Pie>
                     <Tooltip />
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-around mt-6 font-black text-[10px] uppercase">
-                <div className="text-green-600">WhatsApp: {metrics.whatsappLeads}</div>
-                <div className="text-yellow-500">Perfil IG: {metrics.profileVisits}</div>
+              <div className="mt-6 space-y-3">
+                {chartData.map((item, idx) => (
+                  <div key={idx} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full" style={{ backgroundColor: COLORS[idx % COLORS.length] }}></div>
+                      <span className="text-xs font-bold text-slate-500">{item.name}</span>
+                    </div>
+                    <span className="text-xs font-black text-slate-700">{formatCurrency(item.gasto)}</span>
+                  </div>
+                ))}
               </div>
             </div>
-            <div className="bg-yellow-400 rounded-[40px] p-8 shadow-xl border-b-8 border-yellow-600">
-              <h3 className="text-xl font-black text-red-900 italic mb-2 uppercase italic leading-none">Veredicto</h3>
-              <p className="text-red-950 font-bold text-sm leading-relaxed">
-                Logramos **121 entradas directas** al negocio vía WhatsApp. 
-                <br/><br/>
-                La auditoría confirma que la mayoría de los clientes prefieren ver primero el Instagram (865 personas) antes de dar el paso final a la compra.
+          </div>
+        ) : (
+          <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 overflow-hidden print:border print:shadow-none">
+            <div className="overflow-x-auto">
+              <table className="w-full text-left">
+                <thead>
+                  <tr className="bg-slate-50/50 border-b border-slate-100">
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Campaña</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400">Indicador</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Resultados</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Costo Unit.</th>
+                    <th className="px-8 py-5 text-[10px] font-black uppercase tracking-widest text-slate-400 text-right">Inversión</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-50">
+                  {memosPizzaData.map((item, idx) => (
+                    <tr key={idx} className="hover:bg-rose-50/30 transition-colors group">
+                      <td className="px-8 py-5">
+                        <div className="flex flex-col">
+                          <span className="text-sm font-bold text-slate-800 group-hover:text-rose-700 transition-colors">{item.nombre}</span>
+                        </div>
+                      </td>
+                      <td className="px-8 py-5">
+                        <span className={`text-[9px] px-2.5 py-1 rounded-full font-black uppercase tracking-tighter ${
+                          item.indicador.includes('WhatsApp') ? 'bg-emerald-100 text-emerald-700' : 
+                          item.indicador.includes('Interacciones') ? 'bg-blue-100 text-blue-700' : 'bg-amber-100 text-amber-700'
+                        }`}>
+                          {item.indicador}
+                        </span>
+                      </td>
+                      <td className="px-8 py-5 text-right font-black text-slate-900">{formatNum(item.resultados)}</td>
+                      <td className="px-8 py-5 text-right font-bold text-slate-500 text-xs">{formatCurrency(item.costo)}</td>
+                      <td className="px-8 py-5 text-right">
+                        <span className="text-sm font-black text-slate-800">{formatCurrency(item.gasto)}</span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Action Footer - Hidden on print */}
+        <div className="mt-10 bg-rose-600 rounded-[2.5rem] p-10 text-white relative overflow-hidden shadow-2xl shadow-rose-200 print:hidden">
+          <div className="relative z-10 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
+            <div>
+              <h2 className="text-3xl font-black mb-2 tracking-tighter">Resumen Estratégico</h2>
+              <p className="text-rose-100 text-sm max-w-md font-medium">
+                Las campañas de Interacciones están logrando el costo más bajo por resultado, mientras que el contenido de Storytime impulsa las conversiones directas por WhatsApp.
               </p>
             </div>
+            <button 
+              onClick={handleExportPDF}
+              className="bg-white text-rose-600 px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2 hover:scale-105 transition-transform active:scale-95 shadow-xl shadow-rose-900/20"
+            >
+              <Printer size={18} />
+              Exportar a PDF
+              <ChevronRight size={18} />
+            </button>
           </div>
-        )}
-
-        {activeTab === 'detalle' && (
-          <div className="space-y-3 animate-in slide-in-from-bottom duration-500">
-            {campaigns.map((camp, i) => (
-              <div key={i} className="bg-white p-5 rounded-3xl shadow-sm border border-gray-100 flex justify-between items-center relative overflow-hidden active:scale-95 transition-transform">
-                <div className="absolute top-0 left-0 h-full w-1.5" style={{ backgroundColor: camp.color }}></div>
-                <div className="flex-1 pr-4 text-left">
-                  <span className="text-[8px] font-black text-gray-400 uppercase leading-none">{camp.goal}</span>
-                  <h4 className="text-[12px] font-black text-gray-800 uppercase italic leading-tight">{camp.name}</h4>
-                </div>
-                <div className="text-right shrink-0">
-                  <div className="flex items-center gap-1 justify-end">
-                    <p className="text-xl font-black text-gray-900 leading-none">{camp.res}</p>
-                    <ArrowUpRight size={14} className="text-gray-300" />
-                  </div>
-                  <p className="text-[9px] font-bold text-gray-400 mt-1 uppercase italic leading-none">${Math.round(camp.spend/camp.res)} c/u</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {activeTab === 'estrategia' && (
-          <div className="space-y-4 animate-in zoom-in duration-300">
-            <div className="bg-slate-900 rounded-[40px] p-8 text-white shadow-2xl relative overflow-hidden">
-              <h3 className="text-2xl font-black italic text-yellow-400 mb-8 uppercase tracking-tighter">Plan de Vuelo</h3>
-              <div className="space-y-8">
-                <div className="flex gap-4 items-start">
-                  <div className="bg-[#BC0B0B] p-3 rounded-2xl"><TrendingUp size={20} color="#FFF" /></div>
-                  <div>
-                    <h4 className="font-black text-lg italic uppercase leading-none mb-1">Foco en WhatsApp</h4>
-                    <p className="text-slate-400 text-xs leading-relaxed">Priorizar el presupuesto en el link de perfil que atrae clientes interesados a bajo costo.</p>
-                  </div>
-                </div>
-                <div className="flex gap-4 items-start">
-                  <div className="bg-[#BC0B0B] p-3 rounded-2xl"><Users size={20} color="#FFF" /></div>
-                  <div>
-                    <h4 className="font-black text-lg italic uppercase leading-none mb-1">Retargeting</h4>
-                    <p className="text-slate-400 text-xs leading-relaxed">Impactar a los 865 visitantes de diciembre para convertirlos en ventas de enero.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </main>
-
-      {/* NAV INFERIOR */}
-      <div className="fixed bottom-0 left-0 right-0 p-6 z-[100] pointer-events-none">
-        <div className="max-w-xs mx-auto bg-white/90 backdrop-blur-2xl rounded-full px-8 py-5 flex justify-around shadow-2xl border border-gray-100 pointer-events-auto">
-          <button onClick={() => setActiveTab('summary')} className={`transition-all duration-300 ${activeTab === 'summary' ? 'text-[#BC0B0B] scale-125' : 'text-gray-300'}`}>
-            <LayoutDashboard size={24} strokeWidth={3} />
-          </button>
-          <button onClick={() => setActiveTab('detalle')} className={`transition-all duration-300 ${activeTab === 'detalle' ? 'text-[#BC0B0B] scale-125' : 'text-gray-300'}`}>
-            <List size={24} strokeWidth={3} />
-          </button>
-          <button onClick={() => setActiveTab('estrategia')} className={`transition-all duration-300 ${activeTab === 'estrategia' ? 'text-[#BC0B0B] scale-125' : 'text-gray-300'}`}>
-            <Target size={24} strokeWidth={3} />
-          </button>
+          <div className="absolute -right-20 -bottom-20 w-80 h-80 bg-white/10 rounded-full blur-3xl"></div>
+          <div className="absolute -left-10 -top-10 w-40 h-40 bg-rose-500/50 rounded-full blur-2xl"></div>
         </div>
-      </div>
+
+        {/* Print Only Disclaimer */}
+        <div className="hidden print:block mt-12 pt-8 border-t border-slate-200 text-center">
+          <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Reporte Generado Automáticamente por Sistema de Marketing - Memos Pizza Cúcuta</p>
+        </div>
+      </main>
     </div>
   );
 };
