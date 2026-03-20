@@ -2,11 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  font-family: Inter, system-ui, Avenir, Helvetica, Arial, sans-serif;
-  background-color: #F9FAFB;
+@layer base {
+  body {
+    @apply bg-[#fafafa] text-slate-900;
+  }
 }
 
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
+@media print {
+  .print\:hidden {
+    display: none !important;
+  }
 }
